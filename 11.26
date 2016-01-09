@@ -1,0 +1,127 @@
+setwd("D:/R")
+
+install.packages("sp")
+install.packages("Matrix")
+install.packages("spdep")
+install.packages("maptools")
+
+library(sp)
+library(Matrix)
+library(spdep)
+library(maptools)
+####            section 2.3.1              ####
+##  create a W matrix for regular grid data  ##
+
+Wnb1 <- cell2nb(3,3,type="rook")
+Wnb2 <- cell2nb(3,3,type="queen")
+
+
+# Wnb is just a list of neighbors. We need to transfer it into an actural matrix #
+W1 <- nb2listw(Wnb1)
+W2 <- nb2listw(Wnb2)
+W1
+W1$weights
+W2$weights
+
+# how to create a spatially lagged variable WX #
+WX <- lag.listw(W1,X)
+
+
+
+
+
+
+####            section 2.3.2              ####
+##   create a W matrix for irregular data    ##
+
+##  take china_map as an example  ##
+## now if we don't have a SHP file, we can create one weight matrix by ourselves ##
+
+
+## 1. read from a GAL file
+china_regions <- c(1:31)
+Wnb3 <- read.gal("china.gal",region.id=china_regions)
+attributes(Wnb3)
+Wnb3
+W3 <- nb2listw(Wnb3,style="W")
+
+## Error ： Empty neighbour sets found
+## we notice that No.30 is isolated
+
+W3 <- nb2listw(Wnb3,style="W",zero.policy = TRUE)
+W3$weights
+
+
+## 2. read from a GWT file
+Wnb3 <- read.gwt2nb("china.gwt")
+Wnb3
+
+
+
+
+
+
+
+####            section 2.3.3              ####
+##    reading a W matrix from a SHP file     ##
+
+
+## if we have one SHP file, we just need to read the weight matrix from it ##
+
+china <- readShapePoly("chinamap",IDvar="ID")
+names(china)
+plot(china)
+coords<- coordinates(china)
+text (coords, label=sapply(slot(china, "polygons"),function(i) slot(i,"ID")))
+dev.off
+
+## GAL file
+contnb1 <- poly2nb(china, queen=T) 
+W1 <- nb2listw(contnb1,glist=NULL,style="W",zero.policy = TRUE)  #  isolated regions
+
+help(nb2listw)
+
+## GWT file
+contnb2 <- dnearneigh(coordinates(china),0,2000, longlat=TRUE)
+W2 <- nb2listw(contnb2, glist=NULL,style="W")
+# 2000 is the distance along a path on a sphere
+# 2000 is the minimum threshold distance. It is a value that we manually define.
+# question: how to give a proper value ?
+
+W2$weights
+
+##  export the GAL and GWT file
+write.nb.gal(contnb1,"contnb1.gal")
+write.sn2gwt(listw2sn(W2),"contnb2.gwt")
+
+help(write.sn2gwt)
+
+
+ 
+####                      section 2.3.4                      ####
+##    Computation of Moran's I for the residuals of an OLS     ##
+
+moran <- cbind(china$GNLK2005,china$GNSR2005)
+v1 <-moran[,1]
+v2 <-moran[,2]
+#the moran's I of two variables in an OLS procedure
+model1 <- lm(v2~1+v1)
+lm.morantest(model1,W1, alternative="two.sided",zero.policy = TRUE)
+
+
+#the moran's I of one variable
+model2 <- lm(v1~1)
+moran_v1<-lm.morantest(model2,W1,alternative="two.sided",zero.policy = TRUE)
+print(moran_v1)
+class(moran_v1)
+
+## or 
+moran_v1 <- moran.test(v1,W1,zero.policy = TRUE,alternative="two.sided",randomisation = F)
+print(moran_v1)
+class(moran_v1)
+
+
+
+
+
+
