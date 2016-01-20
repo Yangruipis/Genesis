@@ -225,7 +225,7 @@ namespace 统计工具测试1
                     }
 
                 }
-                Console.WriteLine("{0}", sum[j]);
+
                 count3 = count3 + sum[j - 2] / Convert.ToInt32(Math.Pow(j, 2.0));
             }
             int Count_single = count2 + count3;
@@ -234,6 +234,11 @@ namespace 统计工具测试1
         public static string[] StringList(string[] St)
         {
             int len = St.Length;
+            string[] St = new string[len];
+            for (int i = 0; i < len; i++)
+            {
+                St[i] = St2[i];
+            }
             string[] Count_All = new string[StringNum(St)];
             Count_All[0] = St[0];
             for (int i = 0; i < len; i++)
@@ -244,7 +249,7 @@ namespace 统计工具测试1
 
                     if (St[j] == St[i])
                     {
-                        St[j] = "0";
+                        St[j] = "Ray";
 
                     }
                     // len_ar = ar.Count;
@@ -268,7 +273,7 @@ namespace 统计工具测试1
 
             for (int i = 0; i < len - StringNum(St)+1; i++)
             {
-                List.Remove("0");
+                List.Remove("Ray");
             }
 
             string[] arrString = (string[])List.ToArray(typeof(string));
